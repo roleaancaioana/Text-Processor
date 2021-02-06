@@ -1,0 +1,70 @@
+// Copyright Rolea Anca-Ioana, 333CA
+
+============================Mentiuni asupra implementarii===========================
+
+~~~~~~~MASTER:
+=> Pornesc 4 fire de executie din master. Fiecare fir de executie va deschide si va
+parcurge fisierul de intrare, apoi fiecare fir de executie va fi raspunzator
+de trimiterea la workeri a unui tip de paragraf. Asadar, am adunat toate
+paragrafele de tipul celui de care este raspunzator un fir de executie si le-am pus
+in vectorul sentParagraphs. 
+
+=> Fiecare fir de executie din master va scoate apoi cate un paragraf din vectorul
+sau sentParagraphs pe care il va trimite la workeri pentru a-l procesa. Firul de 
+executie va astepta apoi sa primeasca paragraful procesat inapoi de la workeri
+(MPI_Send si MPI_Recv sunt blocante).
+
+=> De asemenea, pentru a putea pastra ordinea paragrafelor in fisierul de output
+a trebuit sa tin evidenta lor cu ajutorul vectorului genre_in_order.
+
+=> A fost nevoie de utilizarea unei bariere pentru a astepta ca toti workerii sa
+termine de procesat paragrafele, ca mai apoi acestea sa poata fi afisate.
+
+=> La final thread-ul 0 va fi cel care va afisa in fisierul de iesire paragrafele
+modificate
+
+~~~~~~~~Workeri:
+=> Pornesc in main thread-ul care va recepta datele de la master, iar apoi celelalte P-1 
+thread-uri pentru procesare vor fi pornite de acest thread. In felul acesta am reusit
+sa separ logica de receptare a paragrafelor de cea a procesarii lor (initial incercasem
+sa le pornesc pe toate in main, dar programul avea un comportament ciudat si de aceea
+am renuntat la idee). 
+
+=> Pentru sincronizarea thread-urilor unui worker care proceseaza datele de la master am 
+utilizat o bariera deoarece thread-urile trebuiau sa astepte terminarea procesarii unui
+paragraf, dar si actualizarea variabilei modified_lines.
+
+=> Firul de executie care proceseaza datele de la master si are id-ul 0 va fi raspunzator
+in final de trimiterea paragrafului modificat inapoi la master.
+
+================================Scalabilitate========================================
+~~~~~Rulare 1:
+Serial:
+Test input1.txt took 0.001377105712890625 seconds
+Test input2.txt took 0.1018056869506836 seconds
+Test input3.txt took 0.32596373558044434 seconds
+Test input4.txt took 6.126140117645264 seconds
+Test input5.txt took 8.53784441947937 seconds
+
+Paralel:
+Test input1.txt took 0.31521010398864746 seconds
+Test input2.txt took 0.3673737049102783 seconds
+Test input3.txt took 0.4668002128601074 seconds
+Test input4.txt took 2.0274136066436768 seconds
+Test input5.txt took 2.4235823154449463 seconds
+
+
+~~~~~Rulare 2:
+Serial:
+Test input1.txt took 0.0014088153839111328 seconds
+Test input2.txt took 0.10241246223449707 seconds
+Test input3.txt took 0.32867884635925293 seconds
+Test input4.txt took 5.711543560028076 seconds
+Test input5.txt took 8.263046741485596 seconds
+
+Paralel:
+Test input1.txt took 0.31537747383117676 seconds
+Test input2.txt took 0.417147159576416 seconds
+Test input3.txt took 0.41689157485961914 seconds
+Test input4.txt took 1.6194002628326416 seconds
+Test input5.txt took 2.220132827758789 seconds
